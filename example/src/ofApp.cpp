@@ -2,23 +2,42 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-	cam.open(720,576);
+
+    ofSetLogLevel(OF_LOG_VERBOSE);
+    ofLog::setAutoSpace(true);
+	grabber.listDevices();
+	// ofSetFrameRate(60);
+	cam.open(1280, 760);
+	gui.setup( cam.group );
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
-	cam.update();
+
+	if (cam.isFrameNew()) {
+		float t = ofGetElapsedTimef();
+		cam.lock();
+		copy = cam.image;
+		cam.unlock();
+		ofLog() << "FPS " << 1.0/(t-stamp);
+		stamp = t;
+	}
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-	cam.draw(0,0,ofGetWidth(),ofGetHeight());
-	ofDrawBitmapStringHighlight( ofToString(ofGetFrameRate()), 10, 10 );
+	copy.draw(0,0,ofGetWidth(),ofGetHeight());
+	ofDrawBitmapStringHighlight( ofToString(ofGetFrameRate()), 240, 20 );
+	gui.draw();
 }
 
+void ofApp::exit() {
+	cam.close(); // zehr wichtig
+}
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-
+	if (key == 'f') ofToggleFullscreen();
+	if (key == 'p') cam.printInfo();
 }
 
 //--------------------------------------------------------------

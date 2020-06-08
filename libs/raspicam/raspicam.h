@@ -88,7 +88,7 @@ namespace raspicam {
           *
           * Be careful, if you call grab(), this will be rewritten with the new data
           */
-        unsigned char *getImageBufferData() const;
+        unsigned char * getImageBufferData() const;
         /**
          * Returns the size of the images captured.
          */

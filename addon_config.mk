@@ -15,11 +15,11 @@
 # and the PG will write to the console the kind of error and in which line it is
 
 meta:
-	ADDON_NAME = ofxCvPicam
-	ADDON_DESCRIPTION = Addon for computer vision addon to allow Raspberry Pi Camera frames to be processed by openCv
-	ADDON_AUTHOR = George Profenza
-	ADDON_TAGS = "computer vision" "opencv" "image processing" "raspberry pi" "pi camera"
-	ADDON_URL = http://github.com/orgicus/ofxCvPiCam
+	ADDON_NAME = ofxRaspicam
+	ADDON_DESCRIPTION = 
+	ADDON_AUTHOR = Gilbert Sinnott
+	ADDON_TAGS = "image processing" "raspberry pi" "pi camera" "pi high quality camera" "c-mount"
+	ADDON_URL = http://github.com/autr/ofxRaspicam
 
 common:
 	# dependencies with other addons, a list of them separated by spaces 

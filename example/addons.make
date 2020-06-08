@@ -1,1 +1,2 @@
 ofxRaspicam
+ofxGui
