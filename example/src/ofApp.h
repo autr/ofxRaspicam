@@ -26,6 +26,9 @@ class ofApp : public ofBaseApp{
 		ofxRaspicam cam;
 		ofxPanel gui;
 		ofImage copy;
-		float stamp;
-		ofVideoGrabber grabber;
+		
+		ofVideoGrabber of;
+		ofTexture texture;
+
+		bool showGui;
 };

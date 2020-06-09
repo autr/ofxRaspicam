@@ -1,0 +1,50 @@
+#pragma once
+#include "ofMain.h"
+
+// presets...
+
+enum RASPICAM_MODEL {
+    MISC = 0, // misc
+    V1 = 1, // OV5647 sensor
+    V2 = 2, // IMX219 sensor
+    HIQ = 3 // IMX477 sensor
+    // CVBS // ADV7282-M sensor, pending
+};
+
+enum RASPICAM_MISC_PRESETS {
+    MISC_AUTO = 0,
+    MISC_ML_320_240 = 1,
+    MISC_ML_640_480 = 2,
+    MISC_PAL_720_576 = 3,
+    MISC_NTSE_720_480 = 4,
+    MISC_720P_1280_720 = 5,
+    MISC_1080P_1920_1080 = 6
+};
+
+enum RASPICAM_V1_PRESETS {
+    V1_MODE_AUTO = 0,
+    V1_MODE_1080P_30FPS = 1,
+    V1_MODE_2592_1944_15FPS = 2,
+    V1_MODE_2592_1944_1FPS = 3,
+    V1_MODE_1296_972_42FPS = 4,
+    V1_MODE_1296_730_49FPS = 5,
+    V1_MODE_640_380_60FPS = 6,
+    V1_MODE_640_380_90FPS = 7
+};
+enum RASPICAM_V2_PRESETS {
+    V2_MODE_AUTO = 0,
+    V2_MODE_1080P_30FPS = 1,
+    V2_MODE_3280_2464_15FPS_A = 2,
+    V2_MODE_3280_2464_15FPS_B = 3,
+    V2_MODE_1640_1232_40FPS = 4,
+    V2_MODE_1640_922_40FPS = 5,
+    V2_MODE_1280_720_90FPS = 6,
+    V2_MODE_640_480_200FPS = 7
+};
+enum RASPICAM_HIQ_PRESETS {
+    HIQ_MODE_AUTO = 0,
+    HIQ_MODE_2028_1080_50FPS = 1,
+    HIQ_MODE_2028_1520_50FPS = 2,
+    HIQ_MODE_4056_3040_10FPS = 3,
+    HIQ_MODE_1012_760_120FPS = 4
+};
