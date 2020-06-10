@@ -31,4 +31,5 @@ class ofApp : public ofBaseApp{
 		ofTexture texture;
 
 		bool showGui;
+		bool drawTexture;
 };

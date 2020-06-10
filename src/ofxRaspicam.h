@@ -13,6 +13,7 @@ class ofxRaspicam;
 
 using namespace std;
 
+
 class ofxRaspicam : ofThread {
 
 public:
@@ -44,13 +45,11 @@ public:
 
     void open();
     void close();
-    void syncToTexture( ofTexture & texture );
+    ofTexture & syncToTexture( ofTexture & texture );
 
     // utility functions
 
     raspicam::RaspiCam & getInternal();
-
-    const unsigned char * getData();
     
     int getActualFPS() {
         return actualFPS;
@@ -106,31 +105,34 @@ public:
     static vector<int> RASPICAM_PRESETS_DEF(int i, int ii);
     static int RASPICAM_PRESETS_SIZE(int i);
 
+    int width, height;
+
+    bool debugNoGrab;
+
 
 private:
 
-    raspicam::RaspiCam * objPtr = nullptr;
-    raspicam::RaspiCamRawBuffer * bufferPtr = nullptr;
+    void threadedFunction();
 
-    raspicam::RaspiCam & obj() { 
-        if (objPtr == nullptr) ofLogError("ofxRaspicam") << "obj is nullptr...";
-        return *objPtr; 
-    }
-    raspicam::RaspiCamRawBuffer & buffer() { 
-        if (bufferPtr == nullptr) ofLogError("ofxRaspicam") << "buffer is nullptr...";
-        return *bufferPtr; 
-    }
+    raspicam::RaspiCamRawBuffer rawbuffer;
+    raspicam::RaspiCam obj;
+    ofPixels pixels;
+    unsigned char * buffer;
 
     float timer; // timestamp
     float actualFPS; // how fast is it actually grabbing?
 
-    bool needsGrab; // on raw buffer callback
     bool newFrame; // once buffer has been copied
+
     static bool isClosing();
     static void setClosingFlag( bool b);
     // core functions...
 
     static void onRawBufferCallback(const raspicam::RaspiCamRawBuffer& _buffer, void* _thisVoid);
+    static void onCaptureBufferCallback(void *arg);
+    void processCallback(unsigned char * _buffer);
+
+    ofTexture * texturePtr;
 
     void init();
     void release();

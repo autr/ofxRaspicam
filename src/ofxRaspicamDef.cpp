@@ -15,8 +15,8 @@ vector<vector<string>> raspicamPresetStrings = {
         "MISC_AUTO", 
         "MISC_ML_320_240",
         "MISC_ML_640_480", 
-        "MISC_PAL_720_576", 
         "MISC_NTSE_720_480", 
+        "MISC_PAL_720_576", 
         "MISC_720P_1280_720", 
         "MISC_1080P_1920_1080"
     }, { 
@@ -57,8 +57,8 @@ vector<vector<vector<int>>> raspicamPresetSettings = {
         {0,0,0}, // auto
         {320,240,60},
         {640,480,60},
-        {720,576,60},
         {720,480,60},
+        {720,576,60},
         {1280,720,30},
         {1920,1080,30}
     }, {

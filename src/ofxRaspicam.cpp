@@ -13,76 +13,108 @@ void ofxRaspicam::setClosingFlag( bool b) {
 
 ofxRaspicam::ofxRaspicam() {
 
-    objPtr = new raspicam::RaspiCam();
-    bufferPtr = new raspicam::RaspiCamRawBuffer;
+    // bufferPtr = new raspicam::RaspiCamRawBuffer;
     ctrl.setPtr(this);
+    debugNoGrab = false;
 }
 
 ofxRaspicam::~ofxRaspicam() {
     close();
 }
 
-void ofxRaspicam::onRawBufferCallback(const raspicam::RaspiCamRawBuffer& _buffer, void* _thisVoid) {
+void ofxRaspicam::processCallback(unsigned char * _buffer) {
 
     if (ofxRaspicam::isClosing()) return;
 
-    auto _t = static_cast<ofxRaspicam*>(_thisVoid);
-    auto & t = *_t;
-
-    // find actual FPS...
-
     float f = ofGetElapsedTimef();
-    t.actualFPS = 1.0/(f-t.timer);
-    t.timer = f;
+    actualFPS = 1.0/(f-timer);
+    timer = f;
 
     // copy raw buffer...
+    ofLog() << "t";
+    lock();
+    pixels.setFromPixels( _buffer, width, height, 3);
+    unlock();
 
-    if (t.bufferPtr != nullptr) {
-        t.buffer() = _buffer; // COPY
-    } else {
-        ofLogError("ofxRaspicam") << "buffer not defined...";
+    newFrame = true;
+}
+
+
+void ofxRaspicam::onCaptureBufferCallback(void *arg) {
+
+    if (ofxRaspicam::isClosing()) return;
+    ofxRaspicam * t = (ofxRaspicam *) arg;
+    if ((int)t->ctrl.channel != 0) return;
+    t->processCallback( t->obj.getImageBufferData() );
+}
+
+
+void ofxRaspicam::onRawBufferCallback(const raspicam::RaspiCamRawBuffer& _buffer, void* _thisVoid) {
+    if (ofxRaspicam::isClosing()) return;
+    auto t = static_cast<ofxRaspicam*>(_thisVoid);
+    if ((int)t->ctrl.channel != 1) return;
+    t->processCallback( (unsigned char *)_buffer.getBuffer() );
+
+
+}
+
+void ofxRaspicam::threadedFunction()  {
+
+    while(isThreadRunning()) {
+        if ((int)ctrl.channel == 2) {
+            obj.grab();
+            lock();
+            pixels.setFromPixels( (unsigned char *)obj.getImageBufferData(), width, height, 3);
+            newFrame = true;
+            float f = ofGetElapsedTimef();
+            actualFPS = 1.0/(f-timer);
+            timer = f;
+            unlock();
+        }
     }
-
-    t.needsGrab = true;
-    t.newFrame = true;
-
 }
 
 void ofxRaspicam::init( ) {
 
     ofLogNotice("ofxRaspicam") << "opening...\n------------------";
 
-    if (objPtr == nullptr) objPtr = new raspicam::RaspiCam();
-    if (bufferPtr == nullptr) bufferPtr = new raspicam::RaspiCamRawBuffer;
-
     printInfo(); // default settings
     ctrl.initSensor();
     printInfo(); // ofxRaspicam settings
 
     newFrame = false;
-    needsGrab = false;
     ofxRaspicam::setClosingFlag(false);
 
-    obj().setRawBufferCallback( onRawBufferCallback, this );
-    if ( !obj().open()) {
+    width = obj.getWidth();
+    height = obj.getHeight();
+
+    if ( !obj.open()) {
         ofLogError("ofxRaspicam") << "error opening...\n------------------";
         return;
     }
 
-    ofLogNotice("ofxRaspicam") << "sleeping for 500 milliseconds...\n------------------";
-    sleep(500);
+
+    obj.setUserCallback( onCaptureBufferCallback, this );
+    obj.setRawBufferCallback( onRawBufferCallback, this );
+    if (!isThreadRunning()) startThread(true);
+
+
 }
 
-void ofxRaspicam::syncToTexture( ofTexture & texture ) {
-    if (ofxRaspicam::isClosing() || !newFrame || !isOpen()) return;
-    if (texture.getWidth() != getWidth() && texture.getHeight() != getHeight() ) {
-        texture.allocate(getWidth(), getHeight(), GL_RGB);
+ofTexture & ofxRaspicam::syncToTexture( ofTexture & texture ) {
+    if (ofxRaspicam::isClosing() || !newFrame || !isOpen()) return texture;
+    if ((int)texture.getWidth() != (int)getWidth() && (int)texture.getHeight() != (int)getHeight() ) {
+        texture.allocate((int)getWidth(), (int)getHeight(), GL_RGB);
+        ofLogError("ofxRaspicam") << "allocating texture...\n------------------";
         // GLint f;
-        // if (obj().getFormat() == raspicam::RASPICAM_FORMAT::RASPICAM_FORMAT_RGB) {
+        // if (obj.getFormat() == raspicam::RASPICAM_FORMAT::RASPICAM_FORMAT_RGB) {
         // }
     }
-    texture.loadData( getData(), getWidth(), getHeight(), GL_RGB );
-    newFrame = true;
+    if (texturePtr == nullptr) texturePtr = &texture;
+    lock();
+    texture.loadData( pixels );
+    unlock();
+    return texture;
 }
 
 void ofxRaspicam::open() {
@@ -102,23 +134,13 @@ void ofxRaspicam::close() {
 
 void ofxRaspicam::release() { 
     ofxRaspicam::setClosingFlag(true);
-    ofLogNotice("ofxRaspicam") << "closing 1...";
-    obj().setRawBufferCallback( onRawBufferCallback, nullptr );
-    sleep(1000);
-    ofLogNotice("ofxRaspicam") << "closing 2...";
-    delete bufferPtr;
-    bufferPtr = nullptr;
-    sleep(1000);
-    ofLogNotice("ofxRaspicam") << "closing 3...";
-    sleep(1000);
-    ofLogNotice("ofxRaspicam") << "closing 4...";
-    delete objPtr;
-    objPtr = nullptr;
-    sleep(1000);
-    ofLogNotice("ofxRaspicam") << "closing 5...";
-    sleep(1000);
-    ofLogNotice("ofxRaspicam") << "closing 6...";
-
+    // obj.setRawBufferCallback( onRawBufferCallback, nullptr );
+    // obj.setUserCallback( onCaptureBufferCallback, nullptr );
+    if (texturePtr != nullptr) texturePtr->clear();
+    stopThread();
+    sleep(500);
+    obj.release();
+    sleep(500);
     ofxRaspicam::setClosingFlag(false);
 }
 
@@ -126,60 +148,50 @@ void ofxRaspicam::release() {
 
 
 int ofxRaspicam::getWidth() {
-    if (objPtr == nullptr) return 0;
-    return obj().getWidth();
+    return width;
 }
 
 int ofxRaspicam::getHeight() {
-    if (objPtr == nullptr) return 0;
-    return obj().getHeight();
+    return height;
 }
 
 bool ofxRaspicam::isOpen() {
-    if (objPtr == nullptr) return false;
-    return obj().isOpened();
+    return obj.isOpened();
 }
 
 raspicam::RaspiCam & ofxRaspicam::getInternal() {
-    return obj();
-}
-
-const unsigned char * ofxRaspicam::getData() {
-    if (bufferPtr == nullptr) return {};
-    return (unsigned char *)buffer().getBuffer();
+    return obj;
 }
 
 
 string ofxRaspicam::getInfoString() {
 
-    if (objPtr == nullptr) return "NOT INITED";
-
-    string info = "ID: " + obj().getId();
+    string info = "ID: " + obj.getId();
     info += "\n----------------\n";
-    string o = (obj().isOpened()) ? "OPEN" : "CLOSED";
+    string o = (obj.isOpened()) ? "OPEN" : "CLOSED";
     info += "status: " + o + "\n";
-    info += "format: " + ofToString( obj().getFormat() ) + ":" + RASPICAM_FORMAT_STR((int)obj().getFormat()) + "\n";
-    info += "width: " + ofToString( obj().getWidth() ) + "\n";
-    info += "height: " + ofToString( obj().getHeight() ) + "\n";
-    info += "rotation: " + ofToString( obj().getRotation() ) + "\n";
-    info += "horz: " + ofToString( obj().isHorizontallyFlipped() ) + "\n";
-    info += "vert: " + ofToString( obj().isVerticallyFlipped() ) + "\n";
+    info += "format: " + ofToString( obj.getFormat() ) + ":" + RASPICAM_FORMAT_STR((int)obj.getFormat()) + "\n";
+    info += "width: " + ofToString( obj.getWidth() ) + "\n";
+    info += "height: " + ofToString( obj.getHeight() ) + "\n";
+    info += "rotation: " + ofToString( obj.getRotation() ) + "\n";
+    info += "horz: " + ofToString( obj.isHorizontallyFlipped() ) + "\n";
+    info += "vert: " + ofToString( obj.isVerticallyFlipped() ) + "\n";
     info += ".................\n";
-    info += "metering: " + ofToString( obj().getMetering() ) + ":" + RASPICAM_METERING_STR((int)obj().getMetering()) + "\n";
-    info += "shutter: " + ofToString( obj().getShutterSpeed() ) + " (" + humanShutterSpeed((int)obj().getShutterSpeed() ) + ") \n";
-    info += "ISO: " + ofToString( obj().getISO() ) + "\n";
-    info += "exposure: " + ofToString( obj().getExposure() ) + ":" + RASPICAM_EXPOSURE_STR((int)obj().getExposure()) + "\n";
-    info += "AWB: " + ofToString( obj().getAWB() ) + ":" + RASPICAM_AWB_STR((int)obj().getAWB()) + "\n";
-    info += "red: " + ofToString( obj().getAWBG_red() ) + "\n";
-    info += "blue: " + ofToString( obj().getAWBG_blue() ) + "\n";
+    info += "metering: " + ofToString( obj.getMetering() ) + ":" + RASPICAM_METERING_STR((int)obj.getMetering()) + "\n";
+    info += "shutter: " + ofToString( obj.getShutterSpeed() ) + " (" + humanShutterSpeed((int)obj.getShutterSpeed() ) + ") \n";
+    info += "ISO: " + ofToString( obj.getISO() ) + "\n";
+    info += "exposure: " + ofToString( obj.getExposure() ) + ":" + RASPICAM_EXPOSURE_STR((int)obj.getExposure()) + "\n";
+    info += "AWB: " + ofToString( obj.getAWB() ) + ":" + RASPICAM_AWB_STR((int)obj.getAWB()) + "\n";
+    info += "red: " + ofToString( obj.getAWBG_red() ) + "\n";
+    info += "blue: " + ofToString( obj.getAWBG_blue() ) + "\n";
     info += ".................\n";
-    info += "brightness: " + ofToString( obj().getBrightness() ) + "\n";
-    info += "contrast: " + ofToString( obj().getContrast() ) + "\n";
-    info += "saturation: " + ofToString( obj().getSaturation() ) + "\n";
-    info += "sharpness: " + ofToString( obj().getSharpness() ) + "\n";
-    info += "effect: " + ofToString( obj().getImageEffect() ) + ":" + RASPICAM_IMAGE_EFFECT_STR((int)obj().getImageEffect()) + "\n";
+    info += "brightness: " + ofToString( obj.getBrightness() ) + "\n";
+    info += "contrast: " + ofToString( obj.getContrast() ) + "\n";
+    info += "saturation: " + ofToString( obj.getSaturation() ) + "\n";
+    info += "sharpness: " + ofToString( obj.getSharpness() ) + "\n";
+    info += "effect: " + ofToString( obj.getImageEffect() ) + ":" + RASPICAM_IMAGE_EFFECT_STR((int)obj.getImageEffect()) + "\n";
     info += ".................\n";
-    info += "target FPS: " + ofToString( obj().getFrameRate() ) + "\n";
+    info += "target FPS: " + ofToString( obj.getFrameRate() ) + "\n";
     info += "actual FPS: " + ofToString( actualFPS ) + "\n";
     info += "ofApp FPS: " + ofToString( ofGetFrameRate() ) + "\n";
     info += "----------------\n";

@@ -19,6 +19,8 @@ public:
     string initialPreset;
 
     ofParameter<bool> enable; // open / close
+    ofParameter<int> channel;
+
     ofParameter<bool> send; // send all controls
     ofParameter<bool> receive; // sync all controls
     ofParameter<int> format; // cannot be changed after open

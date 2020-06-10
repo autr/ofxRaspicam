@@ -3,29 +3,30 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
 
+	ofSetVerticalSync(true);
     ofSetLogLevel(OF_LOG_VERBOSE);
     ofLog::setAutoSpace(true);
 	of.listDevices();
 	// cam.open();
 	showGui = false;
 	// texture.allocate(cam.getWidth(), cam.getHeight(), GL_RGB);
+	drawTexture = true;
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
 
-	// cam.syncToTexture( texture );
-
-	if ( cam.isOpen() ) texture.loadData( cam.getData(), cam.getWidth(), cam.getHeight(), GL_RGB );
+	cam.syncToTexture( texture );
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
 	ofSetColor(255);
-	if (texture.isAllocated()) texture.draw(0,0,ofGetWidth(),ofGetHeight());
+	if (texture.isAllocated() && drawTexture) texture.draw(0,0,ofGetWidth(),ofGetHeight());
 	// ofDrawBitmapString( "f = fullscreen, p = print info, g = toggle gui", 10, 10 );
 	// ofDrawBitmapString( "1 = grab ctrls, 2 = cam ctrls, 3 = extra ctrls", 10, 30 );
 	ofDrawBitmapString( cam.getInfoString(), 10, 15 );
+	ofDrawBitmapString( cam.debugNoGrab, 10, 30 );
 	if (showGui) {
 		gui.draw();
 	}
@@ -48,6 +49,8 @@ void ofApp::keyPressed(int key){
 		showGui = true;
 	}
 	if (key == '5') showGui = false;
+	if (key == 'd') cam.debugNoGrab = !cam.debugNoGrab;
+	if (key == 's') drawTexture = !drawTexture;
 }
 
 //--------------------------------------------------------------
