@@ -88,15 +88,19 @@ void ofxRaspicam::init( ) {
     width = obj.getWidth();
     height = obj.getHeight();
 
+    ofLog() << "A";
+
     if ( !obj.open()) {
         ofLogError("ofxRaspicam") << "error opening...\n------------------";
         return;
     }
 
+    ofLog() << "B";
+
 
     obj.setUserCallback( onCaptureBufferCallback, this );
-    obj.setRawBufferCallback( onRawBufferCallback, this );
-    if (!isThreadRunning()) startThread(true);
+    // obj.setRawBufferCallback( onRawBufferCallback, this );
+    // if (!isThreadRunning()) startThread(true);
 
 
 }

@@ -4,13 +4,16 @@
 void ofApp::setup(){
 
 	ofSetVerticalSync(true);
-    ofSetLogLevel(OF_LOG_VERBOSE);
-    ofLog::setAutoSpace(true);
+    	ofSetLogLevel(OF_LOG_VERBOSE);
+    	ofLog::setAutoSpace(true);
 	of.listDevices();
 	// cam.open();
-	showGui = false;
+	showGui = true;
+	gui.setup( cam.ctrl.groupA );
 	// texture.allocate(cam.getWidth(), cam.getHeight(), GL_RGB);
 	drawTexture = true;
+
+	// cam.ctrl.enable = true;
 }
 
 //--------------------------------------------------------------

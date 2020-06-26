@@ -16,7 +16,7 @@ ofxRaspicamCtrl::ofxRaspicamCtrl() {
 
 
     groupA.add( enable.set( "enable", false ));
-    groupA.add( channel.set( "threaded", 1, 0, 2 ));
+    groupA.add( channel.set( "threaded", 0, 0, 2 ));
     groupA.add( send.set( "send", false ));
     groupA.add( receive.set( "receive", false ));
 
