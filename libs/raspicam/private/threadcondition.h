@@ -34,85 +34,41 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ****************************************************************/
-#ifndef _RaspiCam_STILL_H
-#define _RaspiCam_STILL_H
-#include <opencv2/highgui/highgui.hpp>
-#include "raspicamtypes.h"
-#include <cstdio>
-#include <opencv2/core/core.hpp>
+
+
+
+#ifndef _RASPICAM_THREADTHREADCONDITION_H
+#define _RASPICAM_THREADTHREADCONDITION_H
+#include <string>
+#include <thread>             // std::thread
+#include <mutex>              // std::mutex, std::unique_lock
+#include <condition_variable> // std::condition_variable
+
+#include "exceptions.h"
 namespace raspicam {
+    namespace _private
+    {
+        /** @brief This class implements a condition to stop a thread until the
+         * condition is reached.
+         * @ingroup threads */
+        class ThreadCondition
+        {
+            public:
+            ThreadCondition() throw ( raspicam::Exception );
 
-    namespace _private{
-        class Private_Impl_Still;
+            /**The thread that call this function waits untils the condition is activated */
+            void Wait(std::unique_lock<std::mutex>& lck) throw ( raspicam::Exception );
+
+ 
+            /**Wake up all threads waiting for this condition */
+            void BroadCast() throw ( raspicam::Exception );
+
+            private:
+            std::mutex mtx;
+            std::condition_variable cv;
+            bool ready  ;
+
+        };
     }
-
-
-    /**Raspicam API for still camera
-     */
-    class RaspiCam_Still_Cv{
-        //the implementation of the camera
-        _private::Private_Impl_Still *_impl;
-
-        public:
-        /**Constructor
-         */
-        RaspiCam_Still_Cv();
-        /**Destructor
-         */
-        ~RaspiCam_Still_Cv();
-        /** Open  capturing device for video capturing
-         */
-        bool open ( void );
-        /**
-         * Returns true if video capturing has been initialized already.
-         */
-        bool isOpened() const;
-        /**
-        *Closes video file or capturing device.
-        */
-        void release();
-
-        /**
-         * Grabs the next frame from video file or capturing device.
-         */
-        bool grab();
-
-        /**
-        *Decodes and returns the grabbed video frame.
-         */
-        void retrieve ( cv::Mat& image );
-
-        /**Returns the specified VideoCapture property
-         */
-
-        double get ( int propId );
-
-        /**Sets a property in the VideoCapture.
-        *
-         *
-         * Implemented properties:
-         * cv::CAP_PROP_FRAME_WIDTH,cv::CAP_PROP_FRAME_HEIGHT,
-         * cv::CAP_PROP_FORMAT: CV_8UC1 or CV_8UC3
-         * cv::CAP_PROP_BRIGHTNESS: [0,100]
-         * cv::CAP_PROP_CONTRAST: [0,100]
-         * cv::CAP_PROP_SATURATION: [0,100]
-         * cv::CAP_PROP_GAIN: (iso): [0,100]
-         * cv::CAP_PROP_EXPOSURE: -1 auto. [1,100] shutter speed from 0 to 33ms
-         *
-               */
-
-        bool set ( int propId, double value );
-
-        /** Returns the camera identifier. We assume the camera id is the one of the raspberry obtained using raspberry serial number obtained in /proc/cpuinfo
-         */
-        std::string getId() const;
-
-        private:
-        uchar *image_buffer;
-        bool _isOpened;
-	bool _isGrabbed;
-
-    };
-}
+}		/* -----  end of namespace gu  ----- */
 #endif
-

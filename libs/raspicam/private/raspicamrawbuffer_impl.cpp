@@ -34,85 +34,65 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ****************************************************************/
-#ifndef _RaspiCam_STILL_H
-#define _RaspiCam_STILL_H
-#include <opencv2/highgui/highgui.hpp>
-#include "raspicamtypes.h"
-#include <cstdio>
-#include <opencv2/core/core.hpp>
+
+#include <iostream>
+
+#include "mmal/util/mmal_util.h"
+#include "mmal/util/mmal_util_params.h"
+#include "mmal/util/mmal_default_components.h"
+
+#include "raspicamrawbuffer_impl.h"
+
 namespace raspicam {
+    namespace _private {
 
-    namespace _private{
-        class Private_Impl_Still;
-    }
+        void RaspiCamRawBufferImpl::moveFrom(RaspiCamRawBufferImpl &src) {
+            _buffer.reset<MMAL_BUFFER_HEADER_T>(0);
+            _buffer.swap(src._buffer);
+        }
 
+        void RaspiCamRawBufferImpl::setMmalBufferHeader(MMAL_BUFFER_HEADER_T *buffer) {
+            _buffer = std::shared_ptr<MMAL_BUFFER_HEADER_T>(buffer, Deleter());
 
-    /**Raspicam API for still camera
-     */
-    class RaspiCam_Still_Cv{
-        //the implementation of the camera
-        _private::Private_Impl_Still *_impl;
-
-        public:
-        /**Constructor
-         */
-        RaspiCam_Still_Cv();
-        /**Destructor
-         */
-        ~RaspiCam_Still_Cv();
-        /** Open  capturing device for video capturing
-         */
-        bool open ( void );
-        /**
-         * Returns true if video capturing has been initialized already.
-         */
-        bool isOpened() const;
-        /**
-        *Closes video file or capturing device.
-        */
-        void release();
-
-        /**
-         * Grabs the next frame from video file or capturing device.
-         */
-        bool grab();
-
-        /**
-        *Decodes and returns the grabbed video frame.
-         */
-        void retrieve ( cv::Mat& image );
-
-        /**Returns the specified VideoCapture property
-         */
-
-        double get ( int propId );
-
-        /**Sets a property in the VideoCapture.
-        *
-         *
-         * Implemented properties:
-         * cv::CAP_PROP_FRAME_WIDTH,cv::CAP_PROP_FRAME_HEIGHT,
-         * cv::CAP_PROP_FORMAT: CV_8UC1 or CV_8UC3
-         * cv::CAP_PROP_BRIGHTNESS: [0,100]
-         * cv::CAP_PROP_CONTRAST: [0,100]
-         * cv::CAP_PROP_SATURATION: [0,100]
-         * cv::CAP_PROP_GAIN: (iso): [0,100]
-         * cv::CAP_PROP_EXPOSURE: -1 auto. [1,100] shutter speed from 0 to 33ms
-         *
-               */
-
-        bool set ( int propId, double value );
-
-        /** Returns the camera identifier. We assume the camera id is the one of the raspberry obtained using raspberry serial number obtained in /proc/cpuinfo
-         */
-        std::string getId() const;
-
-        private:
-        uchar *image_buffer;
-        bool _isOpened;
-	bool _isGrabbed;
-
-    };
-}
+#ifdef RASPICAM_RAW_BUFFER_ENABLE_TRACE
+            std::cout << std::hex
+            << "RaspiCam: buffer " << buffer << "->" << (void*)buffer->data
+            << " has been wrapped by RaspiCamRawBuffer."
+            << std::endl
+            << std::flush;
 #endif
+        }
 
+        void* RaspiCamRawBufferImpl::getBuffer() {
+            return _buffer ? _buffer.get()->data : 0;
+        }
+
+        const void* RaspiCamRawBufferImpl::getBuffer() const {
+            return _buffer ? _buffer.get()->data : 0;
+        }
+
+        void RaspiCamRawBufferImpl::lock() {
+            if (_buffer)
+                mmal_buffer_header_mem_lock(_buffer.get());
+        }
+
+        void RaspiCamRawBufferImpl::unlock() {
+            if (_buffer)
+                mmal_buffer_header_mem_unlock(_buffer.get());
+        }
+
+        void RaspiCamRawBufferImpl::Deleter::operator()(MMAL_BUFFER_HEADER_T *_buffer) const {
+#ifdef RASPICAM_RAW_BUFFER_ENABLE_TRACE
+            std::cout << std::hex
+            << "RaspiCam: buffer " << _buffer << "->" << (void*)_buffer->data
+            << " has been released." << std::endl
+            << std::flush;
+#endif
+            mmal_buffer_header_release(_buffer);
+        }
+
+        long RaspiCamRawBufferImpl::getUseCount() const {
+            return _buffer.use_count();
+        }
+    }
+}

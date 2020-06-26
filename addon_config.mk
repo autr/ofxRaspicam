@@ -29,7 +29,10 @@ common:
 	# include search paths, this will be usually parsed from the file system
 	# but if the addon or addon libraries need special search paths they can be
 	# specified here separated by spaces or one per line using +=
-	# ADDON_INCLUDES = /usr/local/include
+	ADDON_INCLUDES += /opt/vc/include
+	ADDON_INCLUDES += /opt/vc/include/interface 
+	ADDON_INCLUDES += /opt/vc/include/interface/vcos 
+	ADDON_INCLUDES += /opt/vc/include/interface/mmal 
 	
 	# any special flag that should be passed to the compiler when using this
 	# addon
@@ -38,7 +41,11 @@ common:
 	# any special flag that should be passed to the linker when using this
 	# addon, also used for system libraries with -lname
 	# ADDON_LDFLAGS =
-	ADDON_LDFLAGS = -lraspicam -lmmal -lmmal_core -lmmal_util
+	ADDON_LDFLAGS = -lmmal -lmmal_core -lmmal_util
+	# ADDON_LIBS = libs/raspicam/libraspicam_cv.so
+	# ADDON_LIBS += libs/raspicam/libraspicam.so
+	# ADDON_LIBS += libs/raspicam/libraspicam.so.0.1
+	# ADDON_LIBS += libs/raspicam/libraspicam.so.0.1.2
 	# linux only, any library that should be included in the project using
 	# pkg-config
 	# ADDON_PKG_CONFIG_LIBRARIES =
